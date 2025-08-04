@@ -4,7 +4,7 @@ This repository contains the official implementation for the paper, "A Comprehen
 
 Our work demonstrates that combining advanced loss functions with appropriate threshold-tuning strategies can significantly improve performance on rare codes (**Macro-F1**) while maintaining strong performance on common codes (**Micro-F1**).
 
-## 🚀 Features
+## Features
 
   * **PLM-based Architecture**: A robust model (`PLMICD`) built on RoBERTa with a Label Attention mechanism.
   * **Extensive Loss Function Library**: A wide range of implemented loss functions to combat class imbalance, including:
