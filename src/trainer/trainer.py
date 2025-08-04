@@ -6,6 +6,7 @@ from typing import Optional
 
 import pandas as pd
 import torch
+import time
 from omegaconf import OmegaConf
 from rich.pretty import  pprint
 from rich.progress import track
@@ -17,6 +18,7 @@ from src.models import BaseModel
 from src.settings import ID_COLUMN, TARGET_COLUMN
 from src.trainer.callbacks import BaseCallback
 from src.utils.decision_boundary import f1_score_db_tuning
+from src.utils.visualize import plot_per_class_best_threshold
 
 
 class Trainer:
@@ -32,6 +34,7 @@ class Trainer:
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         lookups: Optional[Lookups] = None,
         accumulate_grad_batches: int = 1,
+        label_transform = None,
     ) -> None:
         self.config = config
         self.data = data
@@ -43,6 +46,7 @@ class Trainer:
         self.metric_collections = metric_collections
         self.lr_scheduler = lr_scheduler
         self.lookups = lookups
+        self.label_transform = label_transform
         self.accumulate_grad_batches = accumulate_grad_batches
         pprint(f"Accumulating gradients over {self.accumulate_grad_batches} batch(es).")
         self.validate_on_training_data = config.trainer.validate_on_training_data
@@ -56,6 +60,7 @@ class Trainer:
         self.current_val_results = None
         self.stop_training = False
         self.best_db = 0.5
+        self._epoch_start_time = None
         self.on_initialisation_end()
 
     def fit(self) -> None:
@@ -201,7 +206,9 @@ class Trainer:
                 ][target_name].compute(logits, targets)
 
         if self.threshold_tuning and split_name == "val":
-            best_result, best_db = f1_score_db_tuning(logits, targets)
+            groups = {g: self.lookups.code_system2code_indices[g]
+                     for g in ["head", "medium", "tail"]}
+            best_result, best_db = f1_score_db_tuning(logits, targets, groups)
             results_dict[split_name]["all"] |= {"f1_micro_tuned": best_result}
             if evaluating_best_model:
                 pprint(f"Best threshold: {best_db}")
@@ -271,6 +278,12 @@ class Trainer:
             self.save_predictions(
                 split_name=split_name, logits=logits, targets=targets, ids=ids
             )
+            plot_per_class_best_threshold(
+                logits=logits,
+                targets=targets,
+                label_transform=self.label_transform
+            )
+
 
     def save_predictions(
         self,
@@ -297,11 +310,17 @@ class Trainer:
         pprint("Saved predictions in {:.2f} seconds".format(time() - tic))
 
     def on_epoch_begin(self) -> None:
+        self._epoch_start_time = time.perf_counter()
         self.reset_metrics()
         for callback in self.callbacks:
             callback.on_epoch_begin(self)
 
     def on_epoch_end(self) -> None:
+        epoch_time = time.perf_counter() - self._epoch_start_time
+        self.log_dict(               
+            {"epoch_time": {"sec": epoch_time}},
+            self.epoch,
+        )
         if self.lr_scheduler is not None:
             if isinstance(
                 self.lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau
@@ -374,3 +393,4 @@ class Trainer:
         self.save_checkpoint("final_model.pt")
         self.save_transforms()
         OmegaConf.save(self.config, self.experiment_path / "config.yaml")
+        

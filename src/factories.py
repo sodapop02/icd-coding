@@ -35,10 +35,18 @@ def get_lookups(
 
 
 def get_model(
-    config: OmegaConf, data_info: dict, text_encoder: Optional[Any] = None
+    config: OmegaConf, data_info: dict, text_encoder: Optional[Any] = None,
+    cls_num_list: Optional[list[int]] = None, 
+    head_idx = None, tail_idx = None,
+    co_occurrence_matrix = None, class_freq = None, neg_class_freq = None, 
+    
 ) -> models.BaseModel:
     model_class = getattr(models, config.name)
-    return model_class(text_encoder=text_encoder, **data_info, **config.configs)
+    return model_class(text_encoder=text_encoder, 
+                       head_idx=head_idx, tail_idx=tail_idx,
+                       cls_num_list=cls_num_list, co_occurrence_matrix=co_occurrence_matrix,
+                       class_freq=class_freq, neg_class_freq=neg_class_freq,
+                       **data_info, **config.configs)
 
 
 def get_optimizer(config: OmegaConf, model: models.BaseModel) -> torch.optim.Optimizer:
@@ -142,7 +150,7 @@ def get_datasets(
     train_data = data.train
     val_data = data.val
     test_data = data.test
-    del data.df
+    # del data.df
 
     datasets_dict["train"] = dataset_class(
         train_data,
