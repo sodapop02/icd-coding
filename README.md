@@ -14,7 +14,7 @@ Our work demonstrates that combining advanced loss functions with appropriate th
       * `AsymmetricLoss` (ASL)
       * `AsymmetricPolynomialLoss` (APL)
       * `RobustAsymmetricLoss` (RAL)
-      * `Class-Balanced Loss` (via ResampleLoss)
+      * `Distribution-Balanced Loss` (via ResampleLoss)
       * `MultiGrainedFocalLoss` (MFM)
       * And others like `DRLoss`, `PFM`, etc.
   * **Advanced Balancing Framework**: Implementation of the **COMIC** framework (`PLMICD2`), which uses a multi-expert architecture and a composite loss including:
