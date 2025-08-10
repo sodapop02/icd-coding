@@ -1,4 +1,4 @@
-# A Comprehensive Study of Class-Sensitive Learning for Long-Tailed ICD Coding
+# Mitigating Imbalance in ICD Coding: A Comprehensive Evaluation of Loss Functions and Threshold Optimization
 
 This repository contains the official implementation for the paper, "A Comprehensive Study of Class-Sensitive Learning for Long-Tailed ICD Coding." We provide a systematic framework for evaluating various class-sensitive loss functions to address the severe class imbalance problem in automated ICD coding.
 
